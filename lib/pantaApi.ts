@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Panta API Base URL
-const PANTA_BASE_URL = 'https://api.panta.market/v1';
+// Panta API Base URL with Env Variable Fallback
+const PANTA_BASE_URL = process.env.NEXT_PUBLIC_PANTA_API_URL || 'https://api.panta.market/v1';
 
 export interface PredictionMarket {
   id: string;
@@ -14,13 +14,18 @@ export interface PredictionMarket {
   endDate: string;
 }
 
+export interface CreationQuote {
+  estimatedFeeSOL: number;
+  currency: string;
+}
+
 // 1. Fetch Active Prediction Markets
 export const fetchPredictionMarkets = async (): Promise<PredictionMarket[]> => {
   try {
-    const response = await axios.get(`${PANTA_BASE_URL}/markets`);
+    const response = await axios.get<PredictionMarket[]>(`${PANTA_BASE_URL}/markets`);
     return response.data;
   } catch (error) {
-    console.warn('Using fallback Panta mock data during development');
+    console.warn('Using fallback Panta mock data during development:', error);
     return [
       {
         id: 'panta-sol-10k',
@@ -47,11 +52,12 @@ export const fetchPredictionMarkets = async (): Promise<PredictionMarket[]> => {
 };
 
 // 2. Fetch Quote for Market Creation Fee
-export const getMarketCreationQuote = async (marketTitle: string) => {
+export const getMarketCreationQuote = async (marketTitle: string): Promise<CreationQuote> => {
   try {
-    const response = await axios.post(`${PANTA_BASE_URL}/markets/quote`, { title: marketTitle });
+    const response = await axios.post<CreationQuote>(`${PANTA_BASE_URL}/markets/quote`, { title: marketTitle });
     return response.data;
   } catch (error) {
+    console.warn('Using fallback quote data:', error);
     return { estimatedFeeSOL: 0.05, currency: 'SOL' };
   }
 };
