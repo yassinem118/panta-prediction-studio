@@ -1,13 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { fetchPredictionMarkets, getMarketCreationQuote, PredictionMarket } from '../lib/pantaApi';
-import { TrendingUp, Layers, CheckCircle2, PlusCircle, BarChart3, AlertCircle, Loader2, DollarSign, ShieldCheck } from 'lucide-react';
+import { TrendingUp, Layers, CheckCircle2, PlusCircle, BarChart3, AlertCircle, Loader2, DollarSign, ShieldCheck, Search, Filter } from 'lucide-react';
 
 export default function Home() {
   const [markets, setMarkets] = useState<PredictionMarket[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'markets' | 'create'>('markets');
+  
+  // Filtering and Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
   
   // Market Creation Form State
   const [title, setTitle] = useState('');
@@ -37,7 +41,7 @@ export default function Home() {
     };
   }, []);
 
-  const handleTitleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTitleChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setTitle(val);
     if (val.length > 5) {
@@ -50,7 +54,7 @@ export default function Home() {
     } else {
       setQuote(null);
     }
-  };
+  }, []);
 
   const handleCreateMarket = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +70,8 @@ export default function Home() {
         noPrice: 0.50,
         volume: 0,
         endDate: endDate || '2026-12-31',
+        impliedProbabilityYes: 50.0,
+        liquidityTier: 'Emerging',
       };
 
       setMarkets([newMarket, ...markets]);
@@ -83,8 +89,17 @@ export default function Home() {
     }, 1000);
   };
 
+  // Filtered markets based on search and category
+  const filteredMarkets = useMemo(() => {
+    return markets.filter((m) => {
+      const matchSearch = !searchQuery || m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchCat = selectedCategory === 'ALL' || m.category === selectedCategory;
+      return matchSearch && matchCat;
+    });
+  }, [markets, searchQuery, selectedCategory]);
+
   // Calculate total platform volume dynamically
-  const totalVolume = markets.reduce((acc, m) => acc + (m.volume || 0), 0);
+  const totalVolume = useMemo(() => markets.reduce((acc, m) => acc + (m.volume || 0), 0), [markets]);
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16">
@@ -100,7 +115,7 @@ export default function Home() {
                 Panta Prediction Studio
               </h1>
               <p className="text-xs text-slate-400 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Enterprise Infrastructure v2.0
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Enterprise Infrastructure
               </p>
             </div>
           </div>
@@ -167,10 +182,43 @@ export default function Home() {
         {/* Explore Markets View */}
         {activeTab === 'markets' && (
           <div>
-            <div className="flex items-center justify-between mb-6">
+            {/* Toolbar: Search and Filter */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
               <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
                 <Layers className="w-5 h-5 text-indigo-400" /> Decentralized Prediction Feed
               </h2>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                {/* Search input */}
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <input
+                    type="text"
+                    placeholder="Search predictions..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-800 text-xs text-slate-200 rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:border-indigo-500 transition placeholder:text-slate-500"
+                  />
+                </div>
+
+                {/* Category Filter */}
+                <div className="relative">
+                  <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    aria-label="Filter markets by category"
+                    className="bg-slate-900 border border-slate-800 text-xs text-slate-300 rounded-xl pl-9 pr-4 py-2.5 focus:outline-none focus:border-indigo-500 cursor-pointer transition"
+                  >
+                    <option value="ALL">All Categories</option>
+                    <option value="DeFi">DeFi</option>
+                    <option value="Ecosystem">Ecosystem</option>
+                    <option value="Core Infrastructure">Core Infrastructure</option>
+                    <option value="Sports">Sports</option>
+                    <option value="AI">AI</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             {isLoading ? (
@@ -178,23 +226,30 @@ export default function Home() {
                 <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
                 <p className="text-sm text-slate-400">Fetching live markets from Panta API...</p>
               </div>
-            ) : markets.length === 0 ? (
+            ) : filteredMarkets.length === 0 ? (
               <div className="text-center py-20 bg-slate-900/40 border border-slate-800 rounded-2xl">
                 <AlertCircle className="w-10 h-10 text-slate-500 mx-auto mb-3" />
-                <p className="text-slate-300 font-medium">No active markets found.</p>
+                <p className="text-slate-300 font-medium">No matching markets found.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {markets.map((m) => (
+                {filteredMarkets.map((m) => (
                   <div
                     key={m.id}
                     className="bg-slate-900/80 border border-slate-800 hover:border-indigo-500/40 rounded-2xl p-6 transition-all duration-300 shadow-xl flex flex-col justify-between group"
                   >
                     <div>
                       <div className="flex justify-between items-start mb-3">
-                        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800/60">
-                          {m.category}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800/60">
+                            {m.category}
+                          </span>
+                          {m.liquidityTier && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/50">
+                              {m.liquidityTier} Liq
+                            </span>
+                          )}
+                        </div>
                         <span className="text-xs text-slate-400 font-mono">Ends: {m.endDate}</span>
                       </div>
                       <h3 className="text-lg font-bold text-slate-100 mb-2 group-hover:text-indigo-300 transition">{m.title}</h3>
@@ -280,6 +335,7 @@ export default function Home() {
                   >
                     <option value="DeFi">DeFi</option>
                     <option value="Ecosystem">Ecosystem</option>
+                    <option value="Core Infrastructure">Core Infrastructure</option>
                     <option value="Sports">Sports</option>
                     <option value="AI">AI</option>
                   </select>
