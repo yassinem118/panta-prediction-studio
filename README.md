@@ -8,6 +8,14 @@ Built for the **Panta API Sidetrack** — Colosseum Crypto World's Fair 2026 (Su
 - Demo video: `[PASTE VIDEO URL]`
 - Colosseum submission: `[PASTE URL]`
 
+## What makes it different
+
+- **Edge calculator**: set your own probability and see payoff, break-even and expected value, then size the bet with half-Kelly from your bankroll.
+- **Flow lens**: price chart and trader analysis built from Panta's public trade tape (YES/NO money flow, traders, whale concentration).
+- **Shareable calls**: after a buy, share a link and a social card showing your entry price and how the market has moved since. No database: the call lives in the URL and is priced live from Panta.
+- **Embeddable widget**: any market as an iframe (`/embed/{id}`) for blogs, communities and creators.
+- **Market builder**: templates that write clear questions and resolution rules, with the exact USDC fee shown before signing.
+
 ## Why
 
 Prediction markets are usually a destination. Panta exposes the infrastructure as an API, so any product can embed them. This project is a thin client that proves the API alone is enough for the full lifecycle: discover → quote → buy → hold → claim, plus market creation.

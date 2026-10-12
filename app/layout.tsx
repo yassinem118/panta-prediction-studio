@@ -4,9 +4,12 @@ import type { Metadata } from "next";
 import { Providers } from "./providers";
 import { Nav } from "@/components/Nav";
 
+const site = process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
-  title: "Panta Prediction Studio",
-  description: "Browse, trade, create and claim Panta prediction markets on Solana.",
+  metadataBase: new URL(site),
+  title: "Panta Studio: trade, create and share prediction markets",
+  description: "A prediction-market terminal on Solana built on the Panta API: edge calculator, flow analysis, shareable calls and embeds.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -15,8 +18,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           <Nav />
-          <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
-          <footer className="mx-auto max-w-5xl px-4 py-8 text-sm" style={{ color: "var(--mute)" }}>
+          <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+          <footer className="mx-auto max-w-6xl px-4 py-8 text-sm mute">
             Powered by Panta · Built by Yassine Elwannase — Maroc, Fès
           </footer>
         </Providers>

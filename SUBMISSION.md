@@ -5,6 +5,8 @@
 
 **What we built / problem:** Embedding prediction markets in a product normally means building the whole stack. Panta Prediction Studio shows the full lifecycle through the Panta API alone: users discover markets, buy YES/NO, follow positions, claim winnings and create their own markets from one interface.
 
+**What makes it different:** an edge calculator (your probability vs the market's, expected value, half-Kelly sizing), a flow lens built from the public trade tape, shareable calls with live-tracked social cards, embeddable market widgets and a market builder with templates.
+
 **How the Panta API is integrated:**
 - Discovery: `GET /markets/`, `/categories/`, `/markets/{id}/`, `/markets/{id}/trades/` drive the feed, filters, detail page and trade tape.
 - Trading: `POST /primaryorderquote/`, `/primaryorderbuild/`, then the user's wallet signs, we broadcast on our RPC and call `/primaryordersubmit/`.

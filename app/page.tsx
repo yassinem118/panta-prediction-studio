@@ -1,55 +1,73 @@
 "use client";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { listMarkets, getCategories } from "@/lib/panta/client";
-import { listOf, toMarket, pct, usd, type Market } from "@/lib/panta/normalize";
+import { listOf, nextCursor, toMarket, usd, type Market } from "@/lib/panta/normalize";
 import { ErrorBox } from "@/components/ErrorBox";
+import { MarketCard } from "@/components/MarketCard";
 
 export default function Home() {
   const [markets, setMarkets] = useState<Market[] | null>(null);
+  const [cursor, setCursor] = useState<string>();
   const [cats, setCats] = useState<string[]>([]);
   const [cat, setCat] = useState("");
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState<"volume" | "contested">("volume");
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<unknown>();
 
-  useEffect(() => {
-    getCategories().then((b) => setCats(listOf(b).map((c: any) => String(c.slug ?? c.name ?? c)))).catch(() => {});
-  }, []);
-  useEffect(() => {
-    setMarkets(null); setError(undefined);
-    listMarkets(cat ? `?category=${encodeURIComponent(cat)}` : "")
-      .then((b) => setMarkets(listOf(b).map(toMarket)))
-      .catch(setError);
+  useEffect(() => { getCategories().then((b) => setCats(listOf(b).map((c: any) => String(c.slug ?? c.name ?? c)))).catch(() => {}); }, []);
+
+  const load = useCallback(async (reset: boolean, cur?: string) => {
+    const qs = new URLSearchParams(); if (cat) qs.set("category", cat); if (cur) qs.set("cursor", cur);
+    try {
+      const body = await listMarkets(qs.toString() ? `?${qs}` : "");
+      const rows = listOf(body).map(toMarket);
+      setMarkets((prev) => (reset || !prev ? rows : [...prev, ...rows]));
+      setCursor(nextCursor(body));
+    } catch (e) { setError(e); }
   }, [cat]);
 
-  const shown = (markets ?? []).filter((m) => m.title.toLowerCase().includes(q.toLowerCase()));
+  useEffect(() => { setMarkets(null); setError(undefined); load(true); }, [load]);
+
+  const shown = useMemo(() => {
+    const f = (markets ?? []).filter((m) => m.title.toLowerCase().includes(q.toLowerCase()));
+    return [...f].sort((a, b) => sort === "volume" ? (b.volume ?? 0) - (a.volume ?? 0) : Math.abs((a.yes ?? 0.5) - 0.5) - Math.abs((b.yes ?? 0.5) - 0.5));
+  }, [markets, q, sort]);
+
+  const totalVol = (markets ?? []).reduce((s, m) => s + (m.volume ?? 0), 0);
+  const hottest = [...(markets ?? [])].sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0))[0];
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Live Panta markets</h1>
-      <div className="flex flex-wrap gap-3">
-        <input className="input max-w-xs" placeholder="Search markets" value={q} onChange={(e) => setQ(e.target.value)} />
-        <select className="input max-w-xs" value={cat} onChange={(e) => setCat(e.target.value)}>
-          <option value="">All categories</option>
-          {cats.map((c) => <option key={c} value={c}>{c}</option>)}
+    <div className="space-y-6">
+      <section className="space-y-3">
+        <h1 className="text-3xl">Every Panta market, with an edge.</h1>
+        <p className="mute max-w-2xl">Browse live markets, size your bet with the edge calculator, trade with your own wallet, and share your call with a link that tracks how it ages.</p>
+        {markets && markets.length > 0 && (
+          <div className="kv" style={{ maxWidth: 640 }}>
+            <div><small>Markets loaded</small><b>{markets.length}</b></div>
+            <div><small>Combined volume</small><b>{usd(totalVol)}</b></div>
+            <div><small>Most traded</small><b style={{ fontSize: ".85rem", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hottest?.title}</b></div>
+          </div>
+        )}
+      </section>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <input className="input" style={{ maxWidth: 260 }} placeholder="Search markets" aria-label="Search markets" value={q} onChange={(e) => setQ(e.target.value)} />
+        <select className="input" style={{ maxWidth: 190 }} aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as any)}>
+          <option value="volume">Most traded</option>
+          <option value="contested">Most contested (near 50¢)</option>
         </select>
+        <div className="flex flex-wrap gap-2">
+          <button className={`chip ${cat === "" ? "chip-on" : ""}`} onClick={() => setCat("")}>All</button>
+          {cats.map((c) => <button key={c} className={`chip ${cat === c ? "chip-on" : ""}`} onClick={() => setCat(c)}>{c}</button>)}
+        </div>
       </div>
+
       <ErrorBox error={error} />
-      {markets === null && !error && <p style={{ color: "var(--mute)" }}>Loading markets from Panta…</p>}
-      {markets && shown.length === 0 && <p style={{ color: "var(--mute)" }}>No markets match. Clear the search or pick another category.</p>}
-      <div className="grid gap-3 md:grid-cols-2">
-        {shown.map((m) => (
-          <Link key={m.id} href={`/markets/${m.id}`} className="panel block p-4 hover:border-[var(--accent)]">
-            <div className="text-sm" style={{ color: "var(--mute)" }}>{m.category ?? "Market"}{m.status ? ` · ${m.status}` : ""}</div>
-            <div className="mt-1 font-medium">{m.title}</div>
-            <div className="mt-3 flex gap-4 text-sm">
-              <span style={{ color: "var(--yes)" }}>YES {pct(m.yes)}</span>
-              <span style={{ color: "var(--no)" }}>NO {pct(m.no)}</span>
-              <span className="ml-auto" style={{ color: "var(--mute)" }}>Vol {usd(m.volume)}</span>
-            </div>
-          </Link>
-        ))}
-      </div>
+      {markets === null && !error && <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="skeleton" style={{ height: 150 }} />)}</div>}
+      {markets && shown.length === 0 && !error && <p className="mute">No markets match. Clear the search or choose another category.</p>}
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{shown.map((m) => <MarketCard key={m.id} m={m} />)}</div>
+      {cursor && <div className="text-center"><button className="btn btn-ghost" disabled={loadingMore} onClick={async () => { setLoadingMore(true); await load(false, cursor); setLoadingMore(false); }}>Load more markets</button></div>}
     </div>
   );
 }
