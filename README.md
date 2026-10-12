@@ -1,35 +1,50 @@
-# 🔮 Panta Prediction Studio
+# Panta Prediction Studio
 
-An interactive studio built on top of **Panta Network** for managing, querying, and visualizing decentralized prediction markets with real-time data streams and enterprise-grade resilience.
+A wallet-connected prediction-market terminal on Solana, built entirely on the **Panta API**: browse live markets, buy YES/NO, track positions, claim winnings and create new markets. Panta never holds user keys.
 
----
+Built for the **Panta API Sidetrack** — Colosseum Crypto World's Fair 2026 (Superteam Earn).
 
-## ✨ Features
+- Live demo: `[PASTE DEPLOYED URL]`
+- Demo video: `[PASTE VIDEO URL]`
+- Colosseum submission: `[PASTE URL]`
 
-- **Panta API Integration:** Direct communication with Panta Network endpoints for prediction markets and fee quotes.
-- **Enterprise Resilience:** Built-in in-memory caching with TTL, exponential backoff, and robust mock fallbacks for 100% uptime.
-- **Real-Time Data Feed:** Visualizes current market odds, liquidity, and active prediction pools.
-- **Modern UI & UX:** Fast, accessible interface built with Next.js 16 (Turbopack) and Tailwind CSS.
-- **Type-Safe:** End-to-end TypeScript architecture ensuring reliability across API calls and payload sanitization.
+## Why
 
----
+Prediction markets are usually a destination. Panta exposes the infrastructure as an API, so any product can embed them. This project is a thin client that proves the API alone is enough for the full lifecycle: discover → quote → buy → hold → claim, plus market creation.
 
-## 🛠️ Tech Stack
+## Panta API integration
 
-- **Framework:** Next.js 16 (App Router with Turbopack)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **API Client:** Axios with Secure Instance & Error Handling (`lib/pantaapi.ts`)
+| Feature | Panta endpoints |
+| --- | --- |
+| Market feed, categories | `GET /markets/`, `GET /categories/` |
+| Market detail + trade tape | `GET /markets/{id}/`, `GET /markets/{id}/trades/` |
+| Buy YES/NO | `POST /primaryorderquote/` → `POST /primaryorderbuild/` → wallet signs → `POST /primaryordersubmit/` |
+| Portfolio | `GET /positions/?wallet=` |
+| Claim winnings | `POST /claim/build/` |
+| Create market | `POST /markets/create/quote/` → `/create/build/` → wallet signs → `/create/register/` |
+| Attribution | `POST /trades/report/` |
 
----
+```
+Browser ─► /api/panta/* (Next.js route, holds X-Api-Key) ─► live-api.panta.market/api/v1
+   └─► Wallet signs the unsigned tx ─► our Solana RPC broadcasts ─► signature reported to Panta
+```
 
-## 🚀 Quick Start
+- The API key never reaches the browser; the proxy only allows the routes above.
+- There is no mock data. If the API fails, the UI shows the API's own error.
 
-### 1. Clone & Install Dependencies
+## Run it
 
 ```bash
-git clone [https://github.com/yassinem118/panta-prediction-studio.git](https://github.com/yassinem118/panta-prediction-studio.git)
-cd panta-prediction-studio
+cp .env.example .env.local     # add your pk_test_... key (docs.panta.market → Quickstart)
 npm install
+npm run probe                  # prints real API response shapes
 npm run dev
-npm run build
+```
+
+> Panta runs on **Solana mainnet** (no testnet). Buys and market creation use real USDC; quotes and builds are free.
+
+## Stack
+
+Next.js (App Router) · TypeScript · Tailwind CSS 4 · @solana/web3.js · Solana wallet-adapter
+
+Yassine Elwannase — Fès, Morocco
