@@ -43,8 +43,9 @@ Browser ─► /api/panta/* (Next.js route, holds X-Api-Key) ─► live-api.pan
 ## Run it
 
 ```bash
-cp .env.example .env.local     # add your pk_test_... key (docs.panta.market → Quickstart)
 npm install
+npm run get-key                # logs in to your Panta account and writes a fresh pk_test_ key to .env.local
+                               # (or: npm run setup, to paste an existing key)
 npm run probe                  # prints real API response shapes
 npm run dev
 ```
@@ -53,6 +54,6 @@ npm run dev
 
 ## Stack
 
-Next.js (App Router) · TypeScript · Tailwind CSS 4 · @solana/web3.js · Solana wallet-adapter
+Next.js (App Router) · TypeScript · Tailwind CSS 4 · light and dark themes · @solana/web3.js · Solana wallet-adapter
 
 Yassine Elwannase — Fès, Morocco

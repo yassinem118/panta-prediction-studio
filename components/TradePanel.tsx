@@ -19,6 +19,7 @@ export function TradePanel({ marketId, title, yes }: { marketId: string; title: 
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ sig: string; entry: number; side: "YES" | "NO"; stake: number }>();
   const [error, setError] = useState<unknown>();
+  const [toast, setToast] = useState(false);
 
   const price = yes === undefined ? undefined : side === "YES" ? yes : 1 - yes;
   const q = belief ?? price ?? 0.5;
@@ -33,7 +34,7 @@ export function TradePanel({ marketId, title, yes }: { marketId: string; title: 
   }
   async function buy() {
     setBusy(true); setError(undefined);
-    try { const r = await buyFlow(wallet, { marketId, side, amount }); setDone({ sig: r.signature, entry: price ?? 0.5, side, stake }); }
+    try { const r = await buyFlow(wallet, { marketId, side, amount }); setDone({ sig: r.signature, entry: price ?? 0.5, side, stake }); setToast(true); }
     catch (e) { setError(e); } finally { setBusy(false); }
   }
 
@@ -54,7 +55,7 @@ export function TradePanel({ marketId, title, yes }: { marketId: string; title: 
         <input className="input mt-1" value={amount} onChange={(e) => { setAmount(e.target.value); setQuote(null); }} inputMode="decimal" />
       </label>
 
-      <div className="rounded-xl p-3" style={{ background: "#0A1D28", border: "1px solid var(--line)" }}>
+      <div className="rounded-xl p-3" style={{ background: "var(--field)", border: "1px solid var(--line)" }}>
         <div className="flex items-center justify-between text-sm"><b>Edge calculator</b><span className="mute">your odds: {Math.round(q * 100)}%</span></div>
         <input aria-label="Your probability" type="range" min={1} max={99} value={Math.round(q * 100)} onChange={(e) => setBelief(Number(e.target.value) / 100)} className="mt-2" />
         {m ? (
@@ -86,7 +87,7 @@ export function TradePanel({ marketId, title, yes }: { marketId: string; title: 
       <ErrorBox error={error} />
       {done && (
         <>
-          <Toast onDone={() => undefined}>Order confirmed. <a className="underline" href={`https://solscan.io/tx/${done.sig}`} target="_blank" rel="noreferrer">View on Solscan</a></Toast>
+          {toast && <Toast onDone={() => setToast(false)}>Order confirmed. <a className="underline" href={`https://solscan.io/tx/${done.sig}`} target="_blank" rel="noreferrer">View on Solscan</a></Toast>}
           <div className="space-y-2 border-t pt-3" style={{ borderColor: "var(--line)" }}>
             <p className="text-sm"><b>Share your call</b> <span className="mute">Friends see your entry and how it is doing.</span></p>
             <ShareCall id={marketId} title={title} side={done.side} entry={done.entry} stake={done.stake} />

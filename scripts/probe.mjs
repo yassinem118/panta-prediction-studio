@@ -1,25 +1,27 @@
-// Run: npm run probe   (needs PANTA_API_KEY in .env.local)
-// Prints the REAL response shapes so you can confirm field names used in lib/panta/*.
-const BASE = process.env.PANTA_BASE_URL ?? "https://live-api.panta.market/api/v1";
-const KEY = process.env.PANTA_API_KEY;
-if (!KEY) { console.error("Set PANTA_API_KEY in .env.local first."); process.exit(1); }
+// npm run probe — prints the REAL response shapes of the Panta API.
+import { BASE, readEnv } from "./_env.mjs";
+const KEY = process.env.PANTA_API_KEY ?? readEnv().PANTA_API_KEY;
+if (!KEY) { console.error("No PANTA_API_KEY found. Run: npm run setup   (or npm run get-key)"); process.exit(1); }
 
 async function hit(method, path, body) {
   const res = await fetch(`${BASE}/${path}`, { method, headers: { "X-Api-Key": KEY, "Content-Type": "application/json" }, body: body && JSON.stringify(body) });
   const text = await res.text();
-  console.log(`\n=== ${method} ${path} -> ${res.status}\n${text.slice(0, 900)}`);
+  console.log(`\n=== ${method} ${path} -> ${res.status}\n${text.slice(0, 1100)}`);
   try { return JSON.parse(text); } catch { return null; }
 }
+const keys = (label, o) => console.log(`>>> ${label} keys:`, o && typeof o === "object" ? Object.keys(o).join(", ") : "(none)");
+const rows = (b) => Array.isArray(b) ? b : (b?.results ?? b?.items ?? b?.markets ?? b?.trades ?? b?.data ?? []);
 
 const list = await hit("GET", "markets/?limit=2");
+keys("markets response", list); keys("first market", rows(list)[0]);
 await hit("GET", "categories/");
-const arr = Array.isArray(list) ? list : (list?.results ?? list?.items ?? list?.markets ?? []);
-const id = arr[0]?.id ?? arr[0]?.marketId;
+const id = rows(list)[0]?.id ?? rows(list)[0]?.marketId;
 if (id) {
-  await hit("GET", `markets/${id}/`);
-  await hit("GET", `markets/${id}/trades/`);
-  // Error responses usually name the missing/invalid fields: use them to fix the payloads.
+  const d = await hit("GET", `markets/${id}/`); keys("market detail", d);
+  const t = await hit("GET", `markets/${id}/trades/`); keys("first trade", rows(t)[0]);
   await hit("POST", "primaryorderquote/", { marketId: id, side: "YES", amount: "1.00" });
 }
 await hit("POST", "markets/create/quote/", { title: "Will it rain tomorrow?" });
-console.log("\nCompare the keys above with lib/panta/normalize.ts and the VERIFY lines in lib/panta/flows.ts.");
+const wallet = process.argv[2];
+if (wallet) { const p = await hit("GET", `positions/?wallet=${wallet}`); keys("first position", rows(p)[0]); }
+console.log("\nCopy the output (it contains no secrets) and send it back so the field names can be matched exactly.");

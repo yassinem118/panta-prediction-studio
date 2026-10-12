@@ -34,7 +34,7 @@ export default async function CallPage(p: P) {
         <p className="mute text-sm">A call on Panta</p>
         <h1 className="text-2xl">{m?.title ?? "Market unavailable"}</h1>
         <div className="flex flex-wrap items-center gap-4">
-          <span className="rounded-xl px-4 py-2 text-lg font-bold" style={{ background: side === "YES" ? "var(--yes)" : "var(--no)", color: "#04231A" }}>Called {side} at {cents(entry)}</span>
+          <span className="rounded-xl px-4 py-2 text-lg font-bold" style={{ background: side === "YES" ? "var(--yes)" : "var(--no)", color: "var(--yes-ink)" }}>Called {side} at {cents(entry)}</span>
           {move !== undefined && <span className="text-lg" style={{ color: move >= 0 ? "var(--yes)" : "var(--no)" }}>now {cents(now)} ({move >= 0 ? "+" : ""}{move}¢)</span>}
         </div>
         {payout && <p className="mute text-sm">A ${stake.toFixed(2)} position returns ${payout.toFixed(2)} if {side} resolves true.</p>}

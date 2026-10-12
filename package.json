@@ -1,12 +1,14 @@
 {
   "name": "panta-prediction-studio",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "probe": "node --env-file=.env.local scripts/probe.mjs"
+    "setup": "node scripts/setup.mjs",
+    "get-key": "node scripts/get-key.mjs",
+    "probe": "node scripts/probe.mjs"
   },
   "dependencies": {
     "@solana/wallet-adapter-react": "^0.15.35",

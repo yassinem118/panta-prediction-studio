@@ -1,4 +1,5 @@
 import { Connection, PublicKey, Transaction, TransactionInstruction, VersionedTransaction } from "@solana/web3.js";
+import { Buffer } from "buffer";
 import type { WalletContextState } from "@solana/wallet-adapter-react";
 
 export const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC ?? "https://api.mainnet-beta.solana.com";
