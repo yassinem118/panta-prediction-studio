@@ -8,8 +8,7 @@ Built for the **Panta API Sidetrack** of Colosseum Crypto World's Fair 2026.
 | | |
 | --- | --- |
 | Live demo | `[https://panta-prediction-studio.vercel.app/]` |
-| Demo video | `[ADD VIDEO URL]` |
-| Colosseum submission | `[ADD URL]` |
+| Demo video | `[https://www.loom.com/share/5b5c400ecaa347d2ada31676ef04f045]` |
 | Author | Yassine Elwannase |
 
 ---
