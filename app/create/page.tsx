@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { getCategories, quoteCreate } from "@/lib/panta/client";
-import { createPayload } from "@/lib/panta/fields";
+import { createPayload, DEFAULT_IMAGE } from "@/lib/panta/fields";
 import { createMarketFlow } from "@/lib/panta/flows";
 import { listOf } from "@/lib/panta/normalize";
 import { ErrorBox } from "@/components/ErrorBox";
@@ -21,18 +21,19 @@ export default function Create() {
   const [cats, setCats] = useState<string[]>([]);
   const [tpl, setTpl] = useState<K>("price");
   const [a, setA] = useState(""); const [b, setB] = useState("");
-  const [f, setF] = useState({ title: "", description: "", category: "", endDate: "", source: "", imageUrl: "" });
+  const [f, setF] = useState({ title: "", description: "", category: "", endDate: "", source: "", imageUrl: DEFAULT_IMAGE });
   const [quote, setQuote] = useState<any>(null);
   const [result, setResult] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
   const set = (k: string) => (e: any) => { setF({ ...f, [k]: e.target.value }); setQuote(null); };
   const T = TEMPLATES[tpl];
-  const ready = f.title && f.description && f.category && f.endDate && f.source && f.imageUrl;
+  const ready = f.title && f.description && f.category && f.endDate && /^https?:\/\//.test(f.source) && /^https:\/\//.test(f.imageUrl);
 
   useEffect(() => { getCategories().then((x) => setCats(listOf(x).map((c: any) => String(c.slug ?? c.name ?? c)))).catch(() => {}); }, []);
 
-  const fill = () => setF({ ...f, title: T.title(a, b, f.endDate), description: T.rules(a, b, f.endDate, f.source) });
+  const host = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
+  const fill = () => setF({ ...f, title: T.title(a, b, f.endDate), description: T.rules(a, b, f.endDate, host(f.source)) });
 
   async function getQuote() { setBusy(true); setError(undefined); try { setQuote(await quoteCreate(createPayload(f, wallet.publicKey?.toBase58()))); } catch (e) { setError(e); } finally { setBusy(false); } }
   async function create() { setBusy(true); setError(undefined); try { setResult(await createMarketFlow(wallet, f)); } catch (e) { setError(e); } finally { setBusy(false); } }
@@ -50,7 +51,7 @@ export default function Create() {
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <input className="input" type="date" aria-label="End date" value={f.endDate} onChange={set("endDate")} />
-            <input className="input" placeholder="Source of truth (e.g. Pyth Network, CoinGecko)" value={f.source} onChange={set("source")} />
+            <input className="input" placeholder="Source of truth URL (https://www.coingecko.com/en/coins/solana)" value={f.source} onChange={set("source")} />
           </div>
           <button className="btn btn-ghost" onClick={fill}>Write question and rules</button>
         </div>
@@ -59,7 +60,7 @@ export default function Create() {
           <textarea className="input" rows={3} placeholder="Resolution rules" value={f.description} onChange={set("description")} />
           <select className="input" aria-label="Category" value={f.category} onChange={set("category")}><option value="">Category</option>{cats.map((c) => <option key={c} value={c}>{c}</option>)}</select>
           <input className="input" placeholder="Image URL (https://… public image for the market)" value={f.imageUrl} onChange={set("imageUrl")} />
-          {!ready && <p className="mute text-xs">Fill every field to enable the fee quote: question, rules, category, end date, source and image URL.</p>}
+          {!ready && <p className="mute text-xs">Fill every field to enable the quote. The source and image must be full https:// links. Panta refuses many image hosts, so use a URL that `npm run probe:create` reports as PASS.</p>}
           <div className="flex gap-2">
             <button className="btn btn-ghost" disabled={busy || !ready} onClick={getQuote}>Get fee quote</button>
             <button className="btn" disabled={busy || !wallet.connected || !quote} onClick={create}>Sign &amp; create</button>

@@ -8,7 +8,8 @@
     "start": "next start",
     "setup": "node scripts/setup.mjs",
     "get-key": "node scripts/get-key.mjs",
-    "probe": "node scripts/probe.mjs"
+    "probe": "node scripts/probe.mjs",
+    "probe:create": "node scripts/probe-create.mjs"
   },
   "dependencies": {
     "@solana/wallet-adapter-react": "^0.15.35",
