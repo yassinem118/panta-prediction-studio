@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { getCategories, quoteCreate } from "@/lib/panta/client";
 import { createPayload } from "@/lib/panta/fields";
-import { QuoteView } from "@/components/QuoteView";
 import { createMarketFlow } from "@/lib/panta/flows";
 import { listOf } from "@/lib/panta/normalize";
 import { ErrorBox } from "@/components/ErrorBox";
 import { OddsRibbon } from "@/components/OddsRibbon";
+import { QuoteView } from "@/components/QuoteView";
 
 const TEMPLATES = {
   price: { name: "Price target", a: "Asset (e.g. SOL)", b: "Target price (e.g. 300)", title: (a: string, b: string, d: string) => `Will ${a || "SOL"} be above $${b || "300"} on ${d || "the end date"}?`, rules: (a: string, _b: string, d: string, s: string) => `Resolves YES if the ${a || "asset"} price is above the target at the close of ${d || "the end date"} according to ${s || "CoinGecko"}. Resolves NO otherwise.` },
@@ -20,18 +20,19 @@ export default function Create() {
   const wallet = useWallet();
   const [cats, setCats] = useState<string[]>([]);
   const [tpl, setTpl] = useState<K>("price");
-  const [a, setA] = useState(""); const [b, setB] = useState(""); const [src, setSrc] = useState("");
-  const [f, setF] = useState({ title: "", description: "", category: "", endDate: "" });
+  const [a, setA] = useState(""); const [b, setB] = useState("");
+  const [f, setF] = useState({ title: "", description: "", category: "", endDate: "", source: "", imageUrl: "" });
   const [quote, setQuote] = useState<any>(null);
   const [result, setResult] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
   const set = (k: string) => (e: any) => { setF({ ...f, [k]: e.target.value }); setQuote(null); };
   const T = TEMPLATES[tpl];
+  const ready = f.title && f.description && f.category && f.endDate && f.source && f.imageUrl;
 
   useEffect(() => { getCategories().then((x) => setCats(listOf(x).map((c: any) => String(c.slug ?? c.name ?? c)))).catch(() => {}); }, []);
 
-  const fill = () => setF({ ...f, title: T.title(a, b, f.endDate), description: T.rules(a, b, f.endDate, src) });
+  const fill = () => setF({ ...f, title: T.title(a, b, f.endDate), description: T.rules(a, b, f.endDate, f.source) });
 
   async function getQuote() { setBusy(true); setError(undefined); try { setQuote(await quoteCreate(createPayload(f, wallet.publicKey?.toBase58()))); } catch (e) { setError(e); } finally { setBusy(false); } }
   async function create() { setBusy(true); setError(undefined); try { setResult(await createMarketFlow(wallet, f)); } catch (e) { setError(e); } finally { setBusy(false); } }
@@ -49,7 +50,7 @@ export default function Create() {
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <input className="input" type="date" aria-label="End date" value={f.endDate} onChange={set("endDate")} />
-            <input className="input" placeholder="Source of truth (e.g. CoinGecko)" value={src} onChange={(e) => setSrc(e.target.value)} />
+            <input className="input" placeholder="Source of truth (e.g. Pyth Network, CoinGecko)" value={f.source} onChange={set("source")} />
           </div>
           <button className="btn btn-ghost" onClick={fill}>Write question and rules</button>
         </div>
@@ -57,8 +58,10 @@ export default function Create() {
           <input className="input" placeholder="Question" value={f.title} onChange={set("title")} />
           <textarea className="input" rows={3} placeholder="Resolution rules" value={f.description} onChange={set("description")} />
           <select className="input" aria-label="Category" value={f.category} onChange={set("category")}><option value="">Category</option>{cats.map((c) => <option key={c} value={c}>{c}</option>)}</select>
+          <input className="input" placeholder="Image URL (https://… public image for the market)" value={f.imageUrl} onChange={set("imageUrl")} />
+          {!ready && <p className="mute text-xs">Fill every field to enable the fee quote: question, rules, category, end date, source and image URL.</p>}
           <div className="flex gap-2">
-            <button className="btn btn-ghost" disabled={busy || !f.title} onClick={getQuote}>Get fee quote</button>
+            <button className="btn btn-ghost" disabled={busy || !ready} onClick={getQuote}>Get fee quote</button>
             <button className="btn" disabled={busy || !wallet.connected || !quote} onClick={create}>Sign &amp; create</button>
           </div>
           {quote && <QuoteView quote={quote} />}
@@ -68,6 +71,7 @@ export default function Create() {
       </div>
       <aside className="card h-fit space-y-3 p-4 lg:sticky lg:top-20">
         <h2 className="text-lg">Preview</h2>
+        {f.imageUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={f.imageUrl} alt="" className="w-full rounded-lg" style={{ maxHeight: 140, objectFit: "cover" }} />}
         <div className="font-medium">{f.title || "Your question appears here"}</div>
         <OddsRibbon yes={0.5} />
         <p className="mute text-xs">{f.title.length} characters · markets open at 50¢ / 50¢</p>
