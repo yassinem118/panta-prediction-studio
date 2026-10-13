@@ -5,6 +5,7 @@ export function StatusPill() {
   useEffect(() => {
     fetch("/api/health").then((r) => r.json()).then((h) => {
       if (!h.keyConfigured) setS({ text: "Key missing", color: "var(--no)" });
+      else if (h.upstream === 200 && h.keyEnv === "test") setS({ text: "Sandbox · test key", color: "var(--accent)" });
       else if (h.upstream === 200) setS({ text: "Panta live · mainnet", color: "var(--yes)" });
       else if (h.upstream === 401 || h.upstream === 403) setS({ text: "Key rejected", color: "var(--no)" });
       else setS({ text: "Panta unreachable", color: "var(--accent)" });

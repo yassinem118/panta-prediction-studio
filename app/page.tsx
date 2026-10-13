@@ -14,6 +14,7 @@ export default function Home() {
   const [sort, setSort] = useState<"volume" | "contested">("volume");
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<unknown>();
+  const [sandbox, setSandbox] = useState(false);
 
   useEffect(() => { getCategories().then((b) => setCats(listOf(b).map((c: any) => String(c.slug ?? c.name ?? c)))).catch(() => {}); }, []);
 
@@ -22,6 +23,7 @@ export default function Home() {
     try {
       const body = await listMarkets(qs.toString() ? `?${qs}` : "");
       const rows = listOf(body).map(toMarket);
+      setSandbox(/test mode/i.test(String(body?.disclaimer ?? "")));
       setMarkets((prev) => (reset || !prev ? rows : [...prev, ...rows]));
       setCursor(nextCursor(body));
     } catch (e) { setError(e); }
@@ -63,6 +65,11 @@ export default function Home() {
         </div>
       </div>
 
+      {sandbox && (
+        <div className="card p-4 text-sm" style={{ borderColor: "var(--accent)" }}>
+          <b>Sandbox data.</b> Your key is a <code>pk_test_</code> key, so Panta returns fixture markets and nothing from mainnet. For the real market list, create a live key: <code>npm run get-key -- live</code>, then restart the dev server. Reading markets is free.
+        </div>
+      )}
       <ErrorBox error={error} />
       {markets === null && !error && <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="skeleton" style={{ height: 150 }} />)}</div>}
       {markets && shown.length === 0 && !error && <p className="mute">No markets match. Clear the search or choose another category.</p>}

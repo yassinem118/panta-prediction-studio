@@ -1,27 +1,28 @@
 import type { WalletContextState } from "@solana/wallet-adapter-react";
 import * as api from "./client";
 import { signAndSend } from "./solana";
+import { AMOUNT_FIELD, createPayload, type CreateForm } from "./fields";
 
-// quote → build → wallet signs → broadcast on our RPC → tell Panta (submit/register) → attribution report.
-// Panta never holds keys. Payload field names marked VERIFY: confirm with `npm run probe` / docs.panta.market.
+// quote → build → wallet signs → broadcast on our RPC → tell Panta → attribution.
+// Panta never holds keys. Quote responses (confirmed by the probe) carry `quoteId` / `createId`,
+// which the build step uses. Lines marked VERIFY are confirmed by `npm run probe` with a live key.
 
 export async function buyFlow(w: WalletContextState, p: { marketId: string; side: "YES" | "NO"; amount: string }) {
   const wallet = w.publicKey!.toBase58();
-  const body = { marketId: p.marketId, side: p.side, amount: p.amount, wallet }; // VERIFY
-  const quote = await api.quoteBuy(body);
-  const build = await api.buildBuy(body);
+  const quote = await api.quoteBuy({ marketId: p.marketId, side: p.side, [AMOUNT_FIELD]: p.amount, wallet });
+  const build = await api.buildBuy({ quoteId: quote.quoteId, wallet }); // VERIFY
   const signature = await signAndSend(w, build);
-  await api.submitBuy({ ...body, signature });
+  await api.submitBuy({ quoteId: quote.quoteId, signature, wallet }); // VERIFY
   await api.reportTrade({ signature }).catch(() => undefined); // attribution is best-effort
   return { quote, signature };
 }
 
-export async function createMarketFlow(w: WalletContextState, p: Record<string, unknown>) {
-  const body = { ...p, wallet: w.publicKey!.toBase58() }; // VERIFY
-  const quote = await api.quoteCreate(body);
-  const build = await api.buildCreate({ ...body, quote });
+export async function createMarketFlow(w: WalletContextState, form: CreateForm) {
+  const wallet = w.publicKey!.toBase58();
+  const quote = await api.quoteCreate(createPayload(form, wallet));
+  const build = await api.buildCreate({ createId: quote.createId, wallet }); // VERIFY
   const signature = await signAndSend(w, build);
-  const market = await api.registerCreate({ ...body, signature });
+  const market = await api.registerCreate({ createId: quote.createId, signature }); // VERIFY
   return { quote, signature, market };
 }
 

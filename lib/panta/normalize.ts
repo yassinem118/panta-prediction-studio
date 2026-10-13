@@ -6,7 +6,7 @@ export const prob = (p?: number) => (p === undefined ? undefined : p > 1 ? Math.
 
 export function listOf(body: any): any[] {
   if (Array.isArray(body)) return body;
-  for (const k of ["results", "items", "markets", "positions", "trades", "data"]) if (Array.isArray(body?.[k])) return body[k];
+  for (const k of ["items", "results", "markets", "categories", "positions", "trades", "data"]) if (Array.isArray(body?.[k])) return body[k];
   return [];
 }
 export function nextCursor(body: any): string | undefined {
@@ -26,7 +26,7 @@ export function toMarket(m: any): Market {
     yes, no,
     volume: num(m.volume ?? m.volumeUsdc ?? m.stats?.volume),
     status: m.status ?? m.phase ?? undefined,
-    ends: m.endDate ?? m.closesAt ?? m.closeTime ?? m.resolutionDate ?? m.endsAt ?? undefined,
+    ends: m.endTime ?? m.endDate ?? m.closesAt ?? m.closeTime ?? m.resolutionDate ?? m.endsAt ?? undefined,
     raw: m,
   };
 }

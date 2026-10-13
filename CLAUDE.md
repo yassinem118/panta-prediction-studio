@@ -37,6 +37,13 @@ Owner: Yassine (Fès, Morocco). He speaks Moroccan Arabic (Darija) and French. R
 - Endpoints: `GET /markets/` (cursor-paginated), `GET /markets/{id}/`, `GET /markets/{id}/trades/`, `GET /categories/`, `GET /positions/?wallet=`, `POST /primaryorderquote/` (~90s quote), `POST /primaryorderbuild/`, `POST /primaryordersubmit/`, `POST /markets/create/quote/` (~5 min session), `POST /markets/create/build/`, `POST /markets/create/register/`, `POST /claim/build/`, `POST /claim/creator-fees/`, `POST /trades/report/`.
 - Amounts: market creation uses USDC base units as integer strings (6 decimals); primary buy uses decimal strings (`"20.00"`).
 
+## Verified response shapes (from `npm run probe`)
+- `GET /markets/` → `{ items: [...], nextCursor, disclaimer }`; market: `marketId, title, description, category, phase, status, startTime, endTime, resolutionTime, region, resolved, volumeUsdc ("0.00" string), yesPrice, noPrice ("0.50" strings), primaryYesPrice, secondaryYesPrice, creatorAddress (detail only)`.
+- `GET /categories/` → `{ categories: ["crypto","politics","sports","entertainment"] }`; `GET /markets/{id}/trades/` → `{ marketId, items: [...] }` (trade field names still to confirm with a live key).
+- `POST /primaryorderquote/` → `{ quoteId, marketId, wallet, side, amountUsdc, shares, feeUsdc, expiresAt }`.
+- `POST /markets/create/quote/` → `{ createId, expectedEventPda, paymentUsdc (base units), liquidityInjectionUsdc, platformRevenueUsdc, marketType, expiresAt, blockhashExpiryHintSec }`.
+- `pk_test_` keys return SANDBOX fixtures (one fake market, no mainnet). Use a `pk_live_` key (`npm run get-key -- live`) for real data; reads, quotes and builds are free, only a signed transaction spends USDC.
+
 ## Known open items (verify against real responses, do not guess)
 Lines tagged `// VERIFY` hold guessed field names. Run `npm run probe`, compare with the real JSON, then fix:
 1. Quote/build request bodies in `lib/panta/flows.ts` and `components/TradePanel.tsx` (`marketId`, `side`, `amount`, `wallet`).

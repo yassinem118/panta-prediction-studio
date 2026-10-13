@@ -4,6 +4,7 @@ import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { BASE, writeKey, checkKey } from "./_env.mjs";
 
+const ENV = process.argv.includes("live") ? "live" : "test"; // npm run get-key -- live
 const rl = readline.createInterface({ input, output });
 const email = process.env.PANTA_EMAIL ?? (await rl.question("Panta account email: ")).trim();
 const password = process.env.PANTA_PASSWORD ?? (await rl.question("Panta password (visible while typing): ")).trim();
@@ -23,10 +24,10 @@ const j = async (path, body, token) => {
 
 try {
   const { access } = await j("auth/token/", { email, password });
-  const created = await j("account/keys/", { env: "test", name: `panta-studio-${new Date().toISOString().slice(0, 10)}` }, access);
+  const created = await j("account/keys/", { env: ENV, name: `panta-studio-${ENV}-${new Date().toISOString().slice(0, 10)}` }, access);
   writeKey(created.secret);
   const status = await checkKey(created.secret);
-  console.log(`New key ${created.prefix}… saved to .env.local (Panta check: HTTP ${status}).`);
+  console.log(`New ${ENV} key ${created.prefix}… saved to .env.local (Panta check: HTTP ${status}).`);
   console.log("Restart the dev server: npm run dev");
 } catch (e) {
   console.error("Failed:", e.message);

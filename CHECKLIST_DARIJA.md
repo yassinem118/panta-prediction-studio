@@ -27,3 +27,9 @@ npm run dev
 - [ ] وصف للريبو (About) + topics: solana, prediction-markets, panta
 - [ ] Traction حقيقي فقط
 - [ ] بدل المفتاح القديم (اللي تلصق ف الشات) بمفتاح جديد
+
+## ملاحظة مهمة: test key = بيانات sandbox
+- المفتاح `pk_test_` كيرجع غير **سوق تجريبي واحد** (Sandbox test market)، ماشي الأسواق الحقيقية
+- باش تشوف الأسواق الحقيقية صاوب مفتاح live: `npm run get-key -- live` ثم عاود `npm run dev`
+- القراءة والـquotes والـbuilds مجانية. المال كيخرج غير ملي توقع معاملة ف المحفظة
+- بعد ما يخدم المفتاح live: `npm run probe` وسيفط الناتج (باش نأكدو أسماء حقول الـtrades والـbuild)

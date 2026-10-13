@@ -2,6 +2,8 @@
 import { useMemo, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { quoteBuy } from "@/lib/panta/client";
+import { AMOUNT_FIELD } from "@/lib/panta/fields";
+import { QuoteView } from "./QuoteView";
 import { buyFlow } from "@/lib/panta/flows";
 import { edgeMath, money } from "@/lib/panta/edge";
 import { cents } from "@/lib/panta/normalize";
@@ -29,7 +31,7 @@ export function TradePanel({ marketId, title, yes }: { marketId: string; title: 
 
   async function getQuote() {
     setBusy(true); setError(undefined);
-    try { setQuote(await quoteBuy({ marketId, side, amount, wallet: wallet.publicKey?.toBase58() })); } // VERIFY payload
+    try { setQuote(await quoteBuy({ marketId, side, [AMOUNT_FIELD]: amount, wallet: wallet.publicKey?.toBase58() })); }
     catch (e) { setError(e); } finally { setBusy(false); }
   }
   async function buy() {
@@ -38,7 +40,6 @@ export function TradePanel({ marketId, title, yes }: { marketId: string; title: 
     catch (e) { setError(e); } finally { setBusy(false); }
   }
 
-  const scalars = quote && typeof quote === "object" ? Object.entries(quote).filter(([, v]) => typeof v !== "object").slice(0, 8) : [];
 
   return (
     <aside className="card space-y-4 p-4 md:sticky md:top-20">
@@ -79,11 +80,7 @@ export function TradePanel({ marketId, title, yes }: { marketId: string; title: 
         <button className="btn flex-1" disabled={busy || !wallet.connected || !quote} onClick={buy}>Sign &amp; buy</button>
       </div>
       {!wallet.connected && <p className="mute text-xs">Connect a wallet to buy. Panta runs on Solana mainnet, so purchases use real USDC.</p>}
-      {scalars.length > 0 && (
-        <dl className="space-y-1 text-sm">
-          {scalars.map(([k, v]) => (<div key={k} className="flex justify-between gap-3"><dt className="mute">{k}</dt><dd>{String(v)}</dd></div>))}
-        </dl>
-      )}
+      {quote && <QuoteView quote={quote} />}
       <ErrorBox error={error} />
       {done && (
         <>

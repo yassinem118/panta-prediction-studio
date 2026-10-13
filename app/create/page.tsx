@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { getCategories, quoteCreate } from "@/lib/panta/client";
+import { createPayload } from "@/lib/panta/fields";
+import { QuoteView } from "@/components/QuoteView";
 import { createMarketFlow } from "@/lib/panta/flows";
 import { listOf } from "@/lib/panta/normalize";
 import { ErrorBox } from "@/components/ErrorBox";
@@ -31,9 +33,8 @@ export default function Create() {
 
   const fill = () => setF({ ...f, title: T.title(a, b, f.endDate), description: T.rules(a, b, f.endDate, src) });
 
-  async function getQuote() { setBusy(true); setError(undefined); try { setQuote(await quoteCreate({ ...f, wallet: wallet.publicKey?.toBase58() })); } catch (e) { setError(e); } finally { setBusy(false); } } // VERIFY payload
+  async function getQuote() { setBusy(true); setError(undefined); try { setQuote(await quoteCreate(createPayload(f, wallet.publicKey?.toBase58()))); } catch (e) { setError(e); } finally { setBusy(false); } }
   async function create() { setBusy(true); setError(undefined); try { setResult(await createMarketFlow(wallet, f)); } catch (e) { setError(e); } finally { setBusy(false); } }
-  const scalars = quote && typeof quote === "object" ? Object.entries(quote).filter(([, v]) => typeof v !== "object").slice(0, 6) : [];
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
@@ -60,7 +61,7 @@ export default function Create() {
             <button className="btn btn-ghost" disabled={busy || !f.title} onClick={getQuote}>Get fee quote</button>
             <button className="btn" disabled={busy || !wallet.connected || !quote} onClick={create}>Sign &amp; create</button>
           </div>
-          {scalars.length > 0 && <dl className="space-y-1 text-sm">{scalars.map(([k, v]) => <div key={k} className="flex justify-between"><dt className="mute">{k}</dt><dd>{String(v)}</dd></div>)}</dl>}
+          {quote && <QuoteView quote={quote} />}
           <ErrorBox error={error} />
           {result && <p className="text-sm">Market created. <a className="underline" href={`https://solscan.io/tx/${result.signature}`} target="_blank" rel="noreferrer">View transaction</a></p>}
         </div>

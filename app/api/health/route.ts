@@ -5,6 +5,6 @@ export async function GET() {
   if (!key) return NextResponse.json({ keyConfigured: false, upstream: null });
   try {
     const r = await fetch(`${BASE}/categories/`, { headers: { "X-Api-Key": key }, cache: "no-store" });
-    return NextResponse.json({ keyConfigured: true, upstream: r.status });
+    return NextResponse.json({ keyConfigured: true, keyEnv: key.startsWith("pk_live_") ? "live" : "test", upstream: r.status });
   } catch { return NextResponse.json({ keyConfigured: true, upstream: 0 }); }
 }
