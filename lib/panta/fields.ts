@@ -18,7 +18,7 @@ export function createPayload(f: CreateForm, wallet?: string) {
     resolutionRule: f.description,
     category: f.category,
     sourcesOfTruth: f.source ? [f.source] : [], // a list of source URLs; `npm run probe:create` confirms the accepted format
-    startTime: Math.floor(Date.now() / 1000),   // unix seconds
+    startTime: Math.floor(Date.now() / 1000) + 7200,   // unix seconds
     endTime: end,                               // unix seconds
     resolutionTime: end ? end + 86400 : undefined, // one day after the end
     imageUrl: f.imageUrl,
